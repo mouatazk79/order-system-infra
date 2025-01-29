@@ -1,0 +1,219 @@
+order:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: klaa79/order-container
+    pullPolicy: IfNotPresent
+    tag: "1.0-SNAPSHOT"
+  service:
+    type: LoadBalancer
+    port: 80
+  logstash:
+    enabled: true
+
+payment:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: klaa79/payment-container
+    pullPolicy: IfNotPresent
+    tag: "1.0-SNAPSHOT"
+  service:
+    type: LoadBalancer
+    port: 80
+  logstash:
+    enabled: true
+
+driver:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: klaa79/driver-container
+    pullPolicy: IfNotPresent
+    tag: "1.0-SNAPSHOT"
+  service:
+    type: LoadBalancer
+    port: 80
+  logstash:
+    enabled: true
+
+
+kafkatoelastic:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: klaa79/kafkatoelastic-container
+    pullPolicy: IfNotPresent
+    tag: "1.0-SNAPSHOT"
+  service:
+    type: LoadBalancer
+    port: 80
+  logstash:
+    enabled: true
+
+
+
+
+kafka:
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 10Gi
+
+  heapOpts: "-Xmx1024m -Xms1024m"
+
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "3Gi"
+      cpu: "2000m"
+
+  config:
+    auto.create.topics.enable: false
+    default.replication.factor: 3
+    min.insync.replicas: 2
+    num.partitions: 3
+    log.retention.hours: 168
+    log.retention.size: 1073741824
+
+  external:
+    enabled: true
+    service:
+      type: LoadBalancer
+      ports:
+        external: 9094
+
+zookeeper:
+  replicaCount: 3
+  persistence:
+    enabled: true
+    size: 8Gi
+
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+schema-registry:
+  enabled: true
+  replicaCount: 1
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  kafka:
+    bootstrapServers: "RELEASE-NAME-kafka:9092"
+
+
+elasticsearch:
+  clusterName: "elasticsearch-cluster"
+  nodeGroup: "master"
+
+  # Configure 3 nodes
+  replicas: 3
+
+  # Node roles
+  roles:
+    - master
+    - data
+    - ingest
+
+  # Resource allocation
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+  # Storage configuration
+  volumeClaimTemplate:
+    accessModes: ["ReadWriteOnce"]
+    storageClassName: "standard"
+    resources:
+      requests:
+        storage: 30Gi
+
+  # Elasticsearch configuration
+  esConfig:
+    elasticsearch.yml: |
+      cluster.name: elasticsearch-cluster
+      discovery.seed_hosts: ["elasticsearch-master-0.elasticsearch-master-headless","elasticsearch-master-1.elasticsearch-master-headless","elasticsearch-master-2.elasticsearch-master-headless"]
+      cluster.initial_master_nodes: ["elasticsearch-master-0","elasticsearch-master-1","elasticsearch-master-2"]
+      xpack.security.enabled: true
+      xpack.monitoring.enabled: true
+
+  # Anti-affinity for HA
+  antiAffinity: "hard"
+
+kibana:
+  elasticsearchHosts: "https://elasticsearch-master:9200"
+
+  # Kibana configuration
+  kibanaConfig:
+    kibana.yml: |
+      server.name: kibana
+      server.host: "0.0.0.0"
+      elasticsearch.hosts: ["https://elasticsearch-master:9200"]
+      elasticsearch.ssl.verificationMode: none
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+logstash:
+  replicas: 1
+
+  # Logstash configuration
+  logstashConfig:
+    logstash.yml: |
+      http.host: 0.0.0.0
+      xpack.monitoring.enabled: true
+      xpack.monitoring.elasticsearch.hosts: ["https://elasticsearch-master:9200"]
+
+  # Example pipeline configuration
+  logstashPipeline:
+    logstash.conf: |
+      input {
+        file {
+          path => "/logs/**/*.log"
+          codec => "json"
+          type => "logback"
+      }
+      }
+  
+      output {
+        if [type]=="logback" {
+        elasticsearch {
+          hosts => [ "http://elastic-1:9200" ]
+          index => "order-system-%{+YYYY.MM.dd}"
+      }
+      }
+      }
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+  persistence:
+    enabled: true
+    size: 10Gi
