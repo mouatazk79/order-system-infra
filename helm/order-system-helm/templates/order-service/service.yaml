@@ -1,0 +1,16 @@
+{{- if .Values.order.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: order-service
+spec:
+  type: {{ .Values.order.service.type }}
+  ports:
+    - port: 80
+      targetPort: 8091
+  selector:
+    app: order-service
+  {{- end -}}

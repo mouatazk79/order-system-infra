@@ -1,0 +1,33 @@
+{{- if .Values.kafkatoelastic.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-kafkatoelastic
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.kafkatoelastic.replicaCount }}
+  selector:
+    matchLabels:
+      app: kafkatoelastic
+  template:
+    metadata:
+      labels:
+        app: kafkatoelastic
+    spec:
+      containers:
+        - name: kafkatoelastic-service
+          image: {{ .Values.kafkatoelastic.image.repository}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA-CONFIG_BOOTSTRAP-SERVERS
+              value: "local-confluent-kafka-cp-kafka-headless:9092"
+            - name: KAFKA-CONFIG_SCHEMA-REGISTRY-URL
+              value: "http://local-confluent-kafka-cp-schema-registry:8081"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1024Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+  {{- end -}}

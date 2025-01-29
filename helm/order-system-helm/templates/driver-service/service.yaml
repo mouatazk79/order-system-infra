@@ -1,0 +1,16 @@
+{{- if .Values.driver.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: driver-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: driver-service
+spec:
+  type: {{ .Values.driver.service.type }}
+  ports:
+    - port: 80
+      targetPort: 8093
+  selector:
+    app: driver-service
+  {{- end -}}

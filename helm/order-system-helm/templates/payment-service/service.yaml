@@ -1,0 +1,16 @@
+{{- if .Values.payment.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: payment-service
+spec:
+  type: {{ .Values.payment.service.type }}
+  ports:
+    - port: 80
+      targetPort: 8090
+  selector:
+    app: payment-service
+  {{- end -}}

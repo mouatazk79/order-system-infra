@@ -1,0 +1,16 @@
+{{- if .Values.kafkatoelastic.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafkatoelastic-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: kafkatoelastic-service
+spec:
+  type: {{ .Values.kafkatoelastic.service.type }}
+  ports:
+    - port: 80
+      targetPort: 8092
+  selector:
+    app: kafkatoelastic-service
+  {{- end -}}

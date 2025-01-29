@@ -1,0 +1,35 @@
+{{- if .Values.payment.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-payment
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.payment.replicaCount }}
+  selector:
+    matchLabels:
+      app: payment
+  template:
+    metadata:
+      labels:
+        app: payment
+    spec:
+      containers:
+        - name: payment-service
+          image: {{ .Values.payment.image.repository}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres-service:5432/postgres?currentSchema=driver&binaryTransfer=true&reWriteBatchedInserts=true&stringtype=unspecified"
+            - name: KAFKA-CONFIG_BOOTSTRAP-SERVERS
+              value: "local-confluent-kafka-cp-kafka-headless:9092"
+            - name: KAFKA-CONFIG_SCHEMA-REGISTRY-URL
+              value: "http://local-confluent-kafka-cp-schema-registry:8081"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1024Mi"
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+  {{- end -}}
